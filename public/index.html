@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Terminal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span aria-hidden="true">▮</span> STOCK TERMINAL</div>
+    <div class="search">
+      <input id="search" type="search" placeholder="Search a stock to add (name or symbol)" aria-label="Search stocks to add" autocomplete="off">
+      <ul id="results" hidden></ul>
+    </div>
+    <label class="pick">View <select id="listSel"></select></label>
+    <div id="fresh" class="fresh" role="status"></div>
+    <button id="themeBtn" type="button" class="ghost"></button>
+  </header>
+
+  <nav id="tabs" aria-label="Sections">
+    <button type="button" data-tab="dashboard">Dashboard</button>
+    <button type="button" data-tab="manage">Portfolios</button>
+    <button type="button" data-tab="compare">Compare</button>
+    <button type="button" data-tab="backtest">Backtest</button>
+    <button type="button" data-tab="risk">Risk</button>
+    <button type="button" data-tab="alerts">Alerts <span id="alertCount" class="count" hidden></span></button>
+    <button type="button" data-tab="settings">Settings</button>
+  </nav>
+
+  <div id="banner" class="banner" role="alert" hidden></div>
+
+  <main>
+    <section id="tab-dashboard" hidden>
+      <div id="kpis" class="kpis"></div>
+      <div class="split">
+        <div class="panel alloc">
+          <h2>Allocation</h2>
+          <div class="chartbox small"><canvas id="allocChart" aria-label="Portfolio allocation chart"></canvas></div>
+          <p id="allocNote" class="muted"></p>
+        </div>
+        <div class="panel grow">
+          <div class="panelhead">
+            <h2 id="tableTitle">Stocks</h2>
+            <div class="seg" role="group" aria-label="Columns">
+              <button type="button" data-cols="market">Market</button>
+              <button type="button" data-cols="positions">Positions</button>
+              <button type="button" data-cols="signals">Signals</button>
+            </div>
+          </div>
+          <div class="scroll"><table id="stockTable"></table></div>
+          <p class="muted">Click a stock for its chart and how its rating was worked out.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-manage" hidden></section>
+    <section id="tab-compare" hidden></section>
+    <section id="tab-backtest" hidden></section>
+    <section id="tab-risk" hidden></section>
+    <section id="tab-alerts" hidden></section>
+    <section id="tab-settings" hidden></section>
+  </main>
+
+  <dialog id="addDlg">
+    <form id="addForm" method="dialog">
+      <h2 id="addTitle">Add stock</h2>
+      <label>Add to <select name="list" required></select></label>
+      <label>Quantity <input name="qty" type="number" min="0" step="any" value="0" inputmode="decimal"></label>
+      <label>Average buy price <input name="avgPrice" type="number" min="0" step="any" value="0" inputmode="decimal"></label>
+      <p class="muted">Leave quantity at 0 to just watch the stock.</p>
+      <p id="addError" class="error" role="alert" hidden></p>
+      <div class="actions">
+        <button type="button" class="ghost" data-act="closeAdd">Cancel</button>
+        <button type="submit" class="primary">Add</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="detailDlg" class="wide">
+    <div id="detail"></div>
+  </dialog>
+</body>
+</html>

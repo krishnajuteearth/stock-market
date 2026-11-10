@@ -1,0 +1,12 @@
+{
+  "name": "stock-market",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal stock market dashboard and portfolio analyzer (NSE/BSE first)",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "test": "node --test"
+  }
+}
