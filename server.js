@@ -1,6 +1,7 @@
 // HTTP server: JSON API + static front end. All market data calls and any API
 // keys stay here; the browser only talks to this server.
 import http from 'node:http';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -22,6 +23,22 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
 const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, 'data');
 mkdirSync(DATA_DIR, { recursive: true });
+
+// Password for hosted use. On this computer only (the default) none is needed.
+const PASSWORD = process.env.APP_PASSWORD || '';
+if (!PASSWORD && !['127.0.0.1', 'localhost', '::1'].includes(HOST)) {
+  console.error(`Refusing to start: HOST=${HOST} lets other computers reach this app, so set APP_PASSWORD first.`);
+  process.exit(1);
+}
+const sha = (text) => createHash('sha256').update(text).digest();
+// Browser password prompt (HTTP Basic). Any username; the password must match.
+function authorized(req) {
+  if (!PASSWORD) return true;
+  const [scheme, token] = (req.headers.authorization || '').split(' ');
+  if (scheme !== 'Basic' || !token) return false;
+  const given = Buffer.from(token, 'base64').toString().split(':').slice(1).join(':');
+  return timingSafeEqual(sha(given), sha(PASSWORD));
+}
 
 const store = openStore(path.join(DATA_DIR, 'stocks.db'));
 const market = createMarket(getProvider());
@@ -217,6 +234,11 @@ const server = http.createServer(async (req, res) => {
   };
   try {
     const url = new URL(req.url, 'http://localhost');
+    if (url.pathname === '/healthz') return res.end('ok'); // host's uptime check: no data, no password
+    if (!authorized(req)) {
+      res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Stock Terminal", charset="UTF-8"' });
+      return res.end('Password required');
+    }
     if (!url.pathname.startsWith('/api/')) {
       if (req.method !== 'GET') throw new HttpError(405, 'Method not allowed');
       return await serveStatic(url.pathname, res);

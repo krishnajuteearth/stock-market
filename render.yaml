@@ -1,0 +1,14 @@
+# Render blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: stock-market
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: APP_PASSWORD
+        generateValue: true # Render makes a random password; read it under Environment

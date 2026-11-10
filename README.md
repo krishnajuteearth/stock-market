@@ -18,6 +18,17 @@ Then open http://localhost:4400. Run the tests with `npm test`.
 Settings (port, data provider, API keys) go in `.env`; see `.env.example`.
 Your portfolios, watchlists, rules and alerts are saved in `data/stocks.db`.
 
+## Host it (Render, free plan)
+
+`render.yaml` sets it up: in Render choose New > Blueprint and pick this repo.
+Render creates a random `APP_PASSWORD`; find it under the service's Environment
+tab. The browser asks for it (any username).
+
+Limits of the free plan: the service sleeps after 15 idle minutes (first load
+then takes about a minute), and its disk is wiped on every restart, so saved
+portfolios do not survive. Export a CSV to keep them, or move to a plan with a
+disk and set `DATA_DIR` to it.
+
 ## How it is put together
 
 | Part | File | Job |
@@ -50,6 +61,6 @@ the same four functions, register it in `lib/providers/index.js`, and set
 - P/E is Yahoo's own P/E, moved with the price since its date. PEG is P/E divided
   by last year's EPS growth. EV/EBITDA and market cap are Yahoo's latest dated values.
 - Totals assume one currency. A view that mixes currencies says so.
-- There is no login. The server listens on your own computer only (`127.0.0.1`).
-  Do not expose it to the internet as it is.
+- On your own computer (`127.0.0.1`, the default) there is no login. To let other
+  computers reach it you must set `APP_PASSWORD`; the server refuses to start otherwise.
 - This is a research tool, not investment advice.
