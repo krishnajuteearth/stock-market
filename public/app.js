@@ -462,6 +462,30 @@ async function renderRisk() {
   }
 }
 
+// ---- scanner ----------------------------------------------------------------
+async function renderScanner() {
+  const el = $('#tab-scanner');
+  el.innerHTML = '<div class="panel">Scanning…</div>';
+  try {
+    const { rows } = await api(`/api/scan?list=${S.list}`);
+    const setupChip = (r) => `<span class="chip ${r.setup === 'No setup' ? 'hold' : r.setup.includes('breakout') ? 'strong-buy' : 'buy'}">${esc(r.setup)}</span>`;
+    const row = (r) => r.error
+      ? `<tr>${stockCell(r)}<td colspan="9" class="wrap muted">${esc(r.error)}</td></tr>`
+      : `<tr>${stockCell(r)}${td(setupChip(r))}${td(num(r.price), 'n')}${td(pct(r.ret3m), `n ${tone(r.ret3m)}`)}${td(pct(r.ret6m), `n ${tone(r.ret6m)}`)}${td(pct(r.fromHighPct), 'n')}${td(ok(r.volRatio) ? `${num(r.volRatio, 1)}×${r.volumeConfirmed ? ' ▲' : ''}` : '—', `n ${r.volumeConfirmed ? 'up' : ''}`)}${td(num(r.entry), 'n')}${td(ok(r.stop) ? `${num(r.stop)} <small>-${num(r.riskPct, 1)}%</small>` : '—', 'n')}${td(num(r.exitBelow), 'n')}</tr>`;
+    const found = rows.filter((r) => r.setup && r.setup !== 'No setup').length;
+    el.innerHTML = `
+      <div class="panel">
+        <div class="panelhead"><h2>Momentum and breakout scanner</h2><span class="muted">${found} of ${rows.length} stocks have a setup</span></div>
+        <div class="scroll"><table><thead><tr>${th('Stock')}${th('Setup')}${th('Last close', 'n')}${th('3 months', 'n')}${th('6 months', 'n')}${th('From 52-wk high', 'n')}${th('Volume vs 20-day', 'n')}${th('Entry above', 'n')}${th('Stop-loss', 'n')}${th('Exit below (50 DMA)', 'n')}</tr></thead><tbody>
+          ${rows.length ? rows.map(row).join('') : '<tr><td colspan="10" class="wrap">No stocks in this view. Add some under Portfolios.</td></tr>'}
+        </tbody></table></div>
+        <p class="muted">Uses daily closing prices, so it changes once a day. Breakout = close above the highest close of the past 20 days (in an uptrend) or of the past year. Uptrend = price above its 50 DMA, and 50 DMA above 200 DMA. ▲ marks volume at least 1.5× its 20-day average. Entry is the level price had to close above; stop-loss is the lowest close of the past 20 days, never more than 8% below entry. These are fixed rules applied to past prices, not predictions or advice.</p>
+      </div>`;
+  } catch (err) {
+    el.innerHTML = `<div class="panel error">Could not scan: ${esc(err.message)}</div>`;
+  }
+}
+
 // ---- alerts -----------------------------------------------------------------
 function renderAlerts() {
   const a = S.alerts?.alerts || [];
@@ -542,7 +566,7 @@ async function putConfig(body, message) {
 const renderSettingsError = (text) => { const el = $('#cfgForm [role="status"]'); el.textContent = `Not saved: ${text}`; el.className = 'error'; };
 
 // ---- navigation and events --------------------------------------------------
-const RENDER = { dashboard: renderDashboard, manage: renderManage, compare: renderCompare, backtest: renderBacktest, risk: renderRisk, alerts: renderAlerts, settings: () => renderSettings() };
+const RENDER = { dashboard: renderDashboard, manage: renderManage, scanner: renderScanner, compare: renderCompare, backtest: renderBacktest, risk: renderRisk, alerts: renderAlerts, settings: () => renderSettings() };
 function showTab(tab) {
   S.tab = tab;
   document.querySelectorAll('main > section').forEach((s) => (s.hidden = s.id !== `tab-${tab}`));

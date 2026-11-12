@@ -14,6 +14,7 @@ import { sma } from './lib/indicators.js';
 import { summarize } from './lib/portfolio.js';
 import { risk } from './lib/risk.js';
 import { backtest } from './lib/backtest.js';
+import { scan, rank } from './lib/scanner.js';
 import { alertState, diffAlerts } from './lib/alerts.js';
 import * as csv from './lib/csv.js';
 
@@ -106,6 +107,21 @@ async function history(symbol) {
   return bars.map((b, i) => ({ t: b.t, c: b.c, dma50: d50[i], dma200: d200[i] }));
 }
 
+// "all" scans every stock in every portfolio and watchlist.
+async function scanFor(param) {
+  const items = param === 'all' || !param ? store.symbols() : store.items(listOf(param).id);
+  const names = new Map(items.map((i) => [i.symbol, i.name]));
+  const rows = await Promise.all([...names].map(async ([symbol, name]) => {
+    try {
+      const result = scan(await market.history(symbol));
+      return result ? { symbol, name, ...result } : { symbol, name, error: 'Under a year of price history' };
+    } catch (err) {
+      return { symbol, name, error: err.message };
+    }
+  }));
+  return { rows: rank(rows), at: Date.now() };
+}
+
 async function runBacktest(q) {
   const symbol = symbolOf(q.get('symbol'));
   const cfg = config();
@@ -189,6 +205,7 @@ const routes = [
   ['GET', /^\/api\/history$/, ({ q }) => history(symbolOf(q.get('symbol')))],
   ['GET', /^\/api\/backtest$/, ({ q }) => runBacktest(q)],
   ['GET', /^\/api\/risk$/, ({ q }) => riskFor(q.get('list'))],
+  ['GET', /^\/api\/scan$/, ({ q }) => scanFor(q.get('list'))],
   ['GET', /^\/api\/config$/, () => ({ config: config(), defaults: DEFAULT_CONFIG, indicators: INDICATORS })],
   ['PUT', /^\/api\/config$/, ({ body }) => {
     let next;

@@ -8,6 +8,7 @@ import { summarize } from '../lib/portfolio.js';
 import { risk } from '../lib/risk.js';
 import { alertState, diffAlerts } from '../lib/alerts.js';
 import { parse, stringify } from '../lib/csv.js';
+import { scan, rank } from '../lib/scanner.js';
 
 const DAY = 864e5;
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -144,4 +145,26 @@ test('csv round trip', () => {
   assert.deepEqual(parse(stringify(rows)), rows);
   assert.equal(stringify([['=SUM(A1)', -5]]), "'=SUM(A1),-5\r\n");
   assert.deepEqual(parse('﻿a,b\r\n1,2\r\n\r\n'), [['a', 'b'], ['1', '2']]);
+});
+
+test('scanner finds breakouts and sets entry and stop', () => {
+  const bars = (n, f) => Array.from({ length: n }, (_, i) => ({ t: i * DAY, c: f(i), v: 1000 }));
+  assert.equal(scan(bars(100, () => 10)), null);
+
+  // steady climb, then a jump on triple volume: clears the past year's high
+  const up = bars(300, (i) => 100 + i);
+  up.push({ t: 300 * DAY, c: 450, v: 3000 });
+  const b = scan(up);
+  assert.equal(b.setup, '52-week breakout');
+  assert.equal(b.entry, 399);
+  assert.equal(b.stop, 381); // lowest close of the past 20 days
+  close(b.volRatio, 3);
+  assert.equal(b.volumeConfirmed, true);
+  assert.ok(b.ret3m > 0 && b.ret6m > b.ret3m);
+
+  const down = scan(bars(300, (i) => 500 - i));
+  assert.equal(down.setup, 'No setup');
+  assert.equal(down.entry, null);
+
+  assert.deepEqual(rank([{ symbol: 'D', ...down }, { symbol: 'E', error: 'x' }, { symbol: 'U', ...b }]).map((r) => r.symbol), ['U', 'D', 'E']);
 });

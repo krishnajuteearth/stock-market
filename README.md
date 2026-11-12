@@ -37,6 +37,7 @@ disk and set `DATA_DIR` to it.
 | Indicators | `lib/indicators.js` | Moving averages, Golden/Death Cross. |
 | Fundamentals | `lib/fundamentals.js` | P/E, PEG, EV/EBITDA, growth as known on a given date. |
 | Backtest | `lib/backtest.js` | Replays the signal engine over past prices. |
+| Scanner | `lib/scanner.js` | Momentum, breakouts, entry and stop-loss levels from daily prices. |
 | Risk | `lib/risk.js` | Concentration, volatility, drawdown. |
 | Alerts | `lib/alerts.js` | Detects changes between two checks. |
 | Portfolio maths | `lib/portfolio.js` | Invested, value, profit/loss, allocation. |
